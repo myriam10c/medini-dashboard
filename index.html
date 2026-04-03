@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Medini Homes — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --card-hover: #222632;
+  --border: #2a2e3a;
+  --text: #e4e4e7;
+  --text-dim: #8b8d97;
+  --accent: #6366f1;
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.12);
+  --orange: #f59e0b;
+  --orange-bg: rgba(245,158,11,0.12);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.12);
+  --blue: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.12);
+  --gray: #6b7280;
+  --gray-bg: rgba(107,114,128,0.12);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- HEADER --- */
+.header {
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  padding: 20px 16px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--border);
+}
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--accent); }
+.date-label {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  font-weight: 500;
+}
+.live-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* --- STATS ROW --- */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.stat-card {
+  background: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+.stat-num {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+.stat-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* --- TABS --- */
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 12px 16px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 89px;
+  z-index: 99;
+}
+.tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+}
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.tab .badge {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* --- FILTERS --- */
+.filters {
+  display: flex;
+  gap: 6px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.filter-chip {
+  white-space: nowrap;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-dim);
+  transition: all 0.2s;
+  user-select: none;
+}
+.filter-chip.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* --- CARDS --- */
+.cards {
+  padding: 8px 16px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  transition: background 0.2s;
+}
+.card:active { background: var(--card-hover); }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.guest-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+}
+.res-id {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-submitted { background: var(--green-bg); color: var(--green); }
+.status-ready { background: var(--blue-bg); color: var(--blue); }
+.status-processing { background: var(--orange-bg); color: var(--orange); }
+.status-failed { background: var(--red-bg); color: var(--red); }
+.status-sent { background: var(--green-bg); color: var(--green); }
+.status-pending { background: var(--gray-bg); color: var(--gray); }
+.status-draft_created { background: var(--orange-bg); color: var(--orange); }
+
+.card-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+}
+.detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.detail .icon { font-size: 14px; flex-shrink: 0; }
+.detail .val { color: var(--text); font-weight: 500; }
+
+.error-msg {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--red-bg);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--red);
+  line-height: 1.4;
+}
+
+/* --- EMPTY STATE --- */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+.empty .icon { font-size: 48px; margin-bottom: 12px; }
+.empty .title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+
+/* --- LOADING --- */
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- LAST UPDATE BAR --- */
+.update-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  z-index: 100;
+}
+.refresh-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.refresh-btn:active { opacity: 0.8; }
+
+/* --- DESKTOP --- */
+@media (min-width: 768px) {
+  .header { padding: 24px 32px 20px; }
+  .stats-row { max-width: 600px; }
+  .tabs { padding: 12px 32px 0; }
+  .filters { padding: 12px 32px; }
+  .cards {
+    padding: 8px 32px 100px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 10px;
+  }
+  .stat-num { font-size: 28px; }
+  .stat-card { padding: 14px 12px; }
+}
+@media (min-width: 1200px) {
+  .cards { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">Medini <span>Homes</span></div>
+    <div class="date-label"><span class="live-dot"></span><span id="todayDate"></span></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num" id="statTotal">-</div><div class="stat-label">Check-ins</div></div>
+    <div class="stat-card"><div class="stat-num" id="statEmail">-</div><div class="stat-label">Emails</div></div>
+    <div class="stat-card"><div class="stat-num" id="statSakani">-</div><div class="stat-label">Sakani</div></div>
+    <div class="stat-card"><div class="stat-num" id="statFailed">-</div><div class="stat-label">Erreurs</div></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="all">Tout <span class="badge" id="badgeAll">0</span></div>
+  <div class="tab" data-tab="email">Emails <span class="badge" id="badgeEmail">0</span></div>
+  <div class="tab" data-tab="sakani">Sakani <span class="badge" id="badgeSakani">0</span></div>
+</div>
+
+<div class="filters" id="filterBar">
+  <div class="filter-chip active" data-filter="all">Tous</div>
+  <div class="filter-chip" data-filter="submitted,sent">Fait</div>
+  <div class="filter-chip" data-filter="ready,pending,draft_created">En attente</div>
+  <div class="filter-chip" data-filter="processing">En cours</div>
+  <div class="filter-chip" data-filter="failed">Erreurs</div>
+</div>
+
+<div class="cards" id="cardsList">
+  <div class="loading"><div class="spinner"></div></div>
+</div>
+
+<div class="update-bar">
+  <span id="lastUpdate">Chargement...</span>
+  <button class="refresh-btn" onclick="loadAll()">Rafraichir</button>
+</div>
+
+<script>
+// --- SUPABASE CONFIG ---
+const SUPABASE_URL = "https://mtfhbxeaiqhveuernkfn.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10ZmhieGVhaXFodmV1ZXJua2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODc0ODEsImV4cCI6MjA4OTA2MzQ4MX0.3DGSNVwbsrvJ_ARLu9nowuCgov1RyWn9LCFOb5T6s6g";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// --- STATE ---
+let emailData = [];
+let sakaniData = [];
+let activeTab = "all";
+let activeFilter = "all";
+
+// --- TODAY (Dubai) ---
+function todayDubai() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Dubai" })).toISOString().split("T")[0];
+}
+
+function formatDateShort(d) {
+  if (!d) return "-";
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+
+function formatDateFull(d) {
+  if (!d) return "-";
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
+}
+
+function timeAgo() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, "0");
+  const m = String(now.getMinutes()).padStart(2, "0");
+  return `Mis à jour à ${h}:${m}`;
+}
+
+// --- STATUS HELPERS ---
+const STATUS_ICONS = {
+  submitted: "✅", sent: "✅", ready: "⏳", pending: "⏳",
+  draft_created: "📝", processing: "⚙️", failed: "❌"
+};
+const STATUS_LABELS = {
+  submitted: "Soumis", sent: "Envoyé", ready: "En attente", pending: "En attente",
+  draft_created: "Brouillon", processing: "En cours", failed: "Échoué"
+};
+
+function statusClass(s) {
+  return "status-" + (s || "pending").replace(/\s+/g, "_");
+}
+
+// --- DATA LOADING ---
+async function loadAll() {
+  const today = todayDubai();
+  document.getElementById("todayDate").textContent = formatDateFull(today);
+
+  const [emailRes, sakaniRes] = await Promise.all([
+    sb.from("email_log").select("*").eq("checkin_date", today).order("created_at", { ascending: true }),
+    sb.from("sakani_queue").select("*").eq("checkin_date", today).order("created_at", { ascending: true })
+  ]);
+
+  emailData = emailRes.data || [];
+  sakaniData = sakaniRes.data || [];
+
+  updateStats();
+  renderCards();
+  document.getElementById("lastUpdate").textContent = timeAgo();
+}
+
+function updateStats() {
+  const allEntries = [...emailData, ...sakaniData];
+  const uniqueRes = new Set([...emailData.map(e => e.reservation_id), ...sakaniData.map(e => e.reservation_id)]);
+
+  document.getElementById("statTotal").textContent = uniqueRes.size;
+
+  const emailDone = emailData.filter(e => e.status === "sent").length;
+  document.getElementById("statEmail").textContent = `${emailDone}/${emailData.length}`;
+
+  const sakaniDone = sakaniData.filter(e => e.status === "submitted").length;
+  document.getElementById("statSakani").textContent = `${sakaniDone}/${sakaniData.length}`;
+
+  const failed = allEntries.filter(e => e.status === "failed").length;
+  document.getElementById("statFailed").textContent = failed;
+  document.getElementById("statFailed").parentElement.style.background =
+    failed > 0 ? "rgba(239,68,68,0.2)" : "";
+
+  document.getElementById("badgeAll").textContent = emailData.length + sakaniData.length;
+  document.getElementById("badgeEmail").textContent = emailData.length;
+  document.getElementById("badgeSakani").textContent = sakaniData.length;
+}
+
+// --- RENDERING ---
+function renderCards() {
+  const container = document.getElementById("cardsList");
+  let items = [];
+
+  if (activeTab === "all" || activeTab === "email") {
+    items.push(...emailData.map(e => ({ ...e, _type: "email" })));
+  }
+  if (activeTab === "all" || activeTab === "sakani") {
+    items.push(...sakaniData.map(e => ({ ...e, _type: "sakani" })));
+  }
+
+  // Apply filter
+  if (activeFilter !== "all") {
+    const allowed = activeFilter.split(",");
+    items = items.filter(e => allowed.includes(e.status));
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="icon">${activeFilter === "failed" ? "🎉" : "📭"}</div>
+        <div class="title">${activeFilter === "failed" ? "Aucune erreur !" : "Rien à afficher"}</div>
+        <div>${activeFilter === "failed" ? "Tout fonctionne correctement" : "Aucune entrée pour ce filtre aujourd'hui"}</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = items.map(item => {
+    const isEmail = item._type === "email";
+    const guestName = isEmail ? (item.guest_name || "-") : `${item.guest_first_name || ""} ${item.guest_last_name || ""}`.trim();
+    const icon = STATUS_ICONS[item.status] || "⏳";
+    const label = STATUS_LABELS[item.status] || item.status;
+    const typeLabel = isEmail ? "📧 Email Building" : "🏛️ Sakani";
+    const errorHtml = item.status === "failed" && (item.error_message)
+      ? `<div class="error-msg">⚠️ ${escHtml((item.error_message || "").substring(0, 200))}</div>` : "";
+
+    return `
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="guest-name">${escHtml(guestName)}</div>
+            <div class="res-id">${typeLabel} · #${escHtml(item.reservation_id || "-")}</div>
+          </div>
+          <div class="status-badge ${statusClass(item.status)}">${icon} ${label}</div>
+        </div>
+        <div class="card-details">
+          <div class="detail"><span class="icon">🏢</span><span class="val">${escHtml(item.building || "-")}</span></div>
+          <div class="detail"><span class="icon">🚪</span><span class="val">Apt ${escHtml(item.apartment_no || "-")}</span></div>
+          <div class="detail"><span class="icon">📅</span><span class="val">${formatDateShort(item.checkin_date)} → ${formatDateShort(item.checkout_date)}</span></div>
+          ${!isEmail ? `<div class="detail"><span class="icon">🌍</span><span class="val">${escHtml(item.nationality || "-")}</span></div>` :
+            `<div class="detail"><span class="icon">📨</span><span class="val">${escHtml((item.building_email || "-").split("@")[0])}</span></div>`}
+        </div>
+        ${errorHtml}
+      </div>`;
+  }).join("");
+}
+
+function escHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// --- TABS ---
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    activeTab = tab.dataset.tab;
+    renderCards();
+  });
+});
+
+// --- FILTERS ---
+document.querySelectorAll(".filter-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    activeFilter = chip.dataset.filter;
+    renderCards();
+  });
+});
+
+// --- REAL-TIME SUBSCRIPTIONS ---
+function setupRealtime() {
+  sb.channel("dashboard-email")
+    .on("postgres_changes", { event: "*", schema: "public", table: "email_log" }, () => {
+      loadAll();
+    })
+    .subscribe();
+
+  sb.channel("dashboard-sakani")
+    .on("postgres_changes", { event: "*", schema: "public", table: "sakani_queue" }, () => {
+      loadAll();
+    })
+    .subscribe();
+}
+
+// --- AUTO REFRESH (fallback every 60s) ---
+setInterval(loadAll, 60000);
+
+// --- INIT ---
+loadAll();
+setupRealtime();
+</script>
+</body>
+</html>
