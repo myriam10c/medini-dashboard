@@ -26,6 +26,8 @@
   --blue-bg: rgba(59,130,246,0.12);
   --gray: #6b7280;
   --gray-bg: rgba(107,114,128,0.12);
+  --purple: #a855f7;
+  --purple-bg: rgba(168,85,247,0.12);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -168,12 +170,40 @@ body {
   border-color: var(--accent);
 }
 
+/* --- SECTION HEADER --- */
+.section-header {
+  padding: 14px 16px 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-header .count {
+  background: var(--accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.section-header.tomorrow {
+  color: var(--purple);
+}
+.section-header.tomorrow .count {
+  background: var(--purple);
+}
+
 /* --- CARDS --- */
 .cards {
-  padding: 8px 16px 100px;
+  padding: 4px 16px 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.cards-bottom {
+  padding-bottom: 100px;
 }
 .card {
   background: var(--card);
@@ -181,6 +211,9 @@ body {
   padding: 14px;
   border: 1px solid var(--border);
   transition: background 0.2s;
+}
+.card.tomorrow-card {
+  border-color: rgba(168,85,247,0.3);
 }
 .card:active { background: var(--card-hover); }
 .card-header {
@@ -216,6 +249,11 @@ body {
 .status-sent { background: var(--green-bg); color: var(--green); }
 .status-pending { background: var(--gray-bg); color: var(--gray); }
 .status-draft_created { background: var(--orange-bg); color: var(--orange); }
+.status-no_contact { background: var(--red-bg); color: var(--red); }
+.status-waiting_dtcm { background: var(--orange-bg); color: var(--orange); }
+.status-waiting_passport { background: var(--orange-bg); color: var(--orange); }
+.status-portal_manual { background: var(--purple-bg); color: var(--purple); }
+.status-whatsapp_manual { background: var(--purple-bg); color: var(--purple); }
 
 .card-details {
   display: grid;
@@ -239,6 +277,15 @@ body {
   border-radius: 8px;
   font-size: 11px;
   color: var(--red);
+  line-height: 1.4;
+}
+.warning-msg {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--orange-bg);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--orange);
   line-height: 1.4;
 }
 
@@ -300,12 +347,14 @@ body {
   .stats-row { max-width: 600px; }
   .tabs { padding: 12px 32px 0; }
   .filters { padding: 12px 32px; }
+  .section-header { padding: 14px 32px 6px; }
   .cards {
-    padding: 8px 32px 100px;
+    padding: 4px 32px 8px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
     gap: 10px;
   }
+  .cards-bottom { padding-bottom: 100px; }
   .stat-num { font-size: 28px; }
   .stat-card { padding: 14px 12px; }
 }
@@ -340,11 +389,12 @@ body {
   <div class="filter-chip" data-filter="submitted,sent">Fait</div>
   <div class="filter-chip" data-filter="ready,pending,draft_created">En attente</div>
   <div class="filter-chip" data-filter="processing">En cours</div>
+  <div class="filter-chip" data-filter="no_contact,waiting_dtcm,waiting_passport">Manquant</div>
   <div class="filter-chip" data-filter="failed">Erreurs</div>
 </div>
 
-<div class="cards" id="cardsList">
-  <div class="loading"><div class="spinner"></div></div>
+<div id="mainContent">
+  <div class="loading" style="padding:40px;display:flex;justify-content:center"><div class="spinner"></div></div>
 </div>
 
 <div class="update-bar">
@@ -361,12 +411,26 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // --- STATE ---
 let emailData = [];
 let sakaniData = [];
+let tomorrowEmailData = [];
+let tomorrowSakaniData = [];
 let activeTab = "all";
 let activeFilter = "all";
 
-// --- TODAY (Dubai) ---
+// --- RELIABLE Dubai date using Intl API ---
 function todayDubai() {
-  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Dubai" })).toISOString().split("T")[0];
+  const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai", year: "numeric", month: "2-digit", day: "2-digit" });
+  return formatter.format(new Date()); // returns YYYY-MM-DD
+}
+
+function tomorrowDubai() {
+  const now = new Date();
+  const dubaiStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  const d = new Date(dubaiStr + "T00:00:00");
+  d.setDate(d.getDate() + 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
 }
 
 function formatDateShort(d) {
@@ -381,21 +445,22 @@ function formatDateFull(d) {
   return dt.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
 }
 
-function timeAgo() {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2, "0");
-  const m = String(now.getMinutes()).padStart(2, "0");
-  return `Mis à jour à ${h}:${m}`;
+function dubaiTimeNow() {
+  return new Intl.DateTimeFormat("fr-FR", { timeZone: "Asia/Dubai", hour: "2-digit", minute: "2-digit" }).format(new Date());
 }
 
 // --- STATUS HELPERS ---
 const STATUS_ICONS = {
-  submitted: "✅", sent: "✅", ready: "⏳", pending: "⏳",
-  draft_created: "📝", processing: "⚙️", failed: "❌"
+  submitted: "\u2705", sent: "\u2705", ready: "\u23f3", pending: "\u23f3",
+  draft_created: "\ud83d\udcdd", processing: "\u2699\ufe0f", failed: "\u274c",
+  no_contact: "\u274c", waiting_dtcm: "\ud83d\udcc4", waiting_passport: "\ud83d\udec2",
+  portal_manual: "\ud83d\udcbb", whatsapp_manual: "\ud83d\udcf1"
 };
 const STATUS_LABELS = {
-  submitted: "Soumis", sent: "Envoyé", ready: "En attente", pending: "En attente",
-  draft_created: "Brouillon", processing: "En cours", failed: "Échoué"
+  submitted: "Soumis", sent: "Envoy\u00e9", ready: "En attente", pending: "En attente",
+  draft_created: "Brouillon", processing: "En cours", failed: "\u00c9chou\u00e9",
+  no_contact: "Pas de contact", waiting_dtcm: "DTCM manquant", waiting_passport: "Passeport manquant",
+  portal_manual: "Portail manuel", whatsapp_manual: "WhatsApp manuel"
 };
 
 function statusClass(s) {
@@ -405,25 +470,28 @@ function statusClass(s) {
 // --- DATA LOADING ---
 async function loadAll() {
   const today = todayDubai();
+  const tomorrow = tomorrowDubai();
   document.getElementById("todayDate").textContent = formatDateFull(today);
 
-  const [emailRes, sakaniRes] = await Promise.all([
+  const [emailRes, sakaniRes, tmrwEmailRes, tmrwSakaniRes] = await Promise.all([
     sb.from("email_log").select("*").eq("checkin_date", today).order("created_at", { ascending: true }),
-    sb.from("sakani_queue").select("*").eq("checkin_date", today).order("created_at", { ascending: true })
+    sb.from("sakani_queue").select("*").eq("checkin_date", today).order("created_at", { ascending: true }),
+    sb.from("email_log").select("*").eq("checkin_date", tomorrow).order("created_at", { ascending: true }),
+    sb.from("sakani_queue").select("*").eq("checkin_date", tomorrow).order("created_at", { ascending: true }),
   ]);
 
   emailData = emailRes.data || [];
   sakaniData = sakaniRes.data || [];
+  tomorrowEmailData = tmrwEmailRes.data || [];
+  tomorrowSakaniData = tmrwSakaniRes.data || [];
 
   updateStats();
-  renderCards();
-  document.getElementById("lastUpdate").textContent = timeAgo();
+  renderAll();
+  document.getElementById("lastUpdate").textContent = `Mis \u00e0 jour \u00e0 ${dubaiTimeNow()} (Dubai)`;
 }
 
 function updateStats() {
-  const allEntries = [...emailData, ...sakaniData];
   const uniqueRes = new Set([...emailData.map(e => e.reservation_id), ...sakaniData.map(e => e.reservation_id)]);
-
   document.getElementById("statTotal").textContent = uniqueRes.size;
 
   const emailDone = emailData.filter(e => e.status === "sent").length;
@@ -432,6 +500,7 @@ function updateStats() {
   const sakaniDone = sakaniData.filter(e => e.status === "submitted").length;
   document.getElementById("statSakani").textContent = `${sakaniDone}/${sakaniData.length}`;
 
+  const allEntries = [...emailData, ...sakaniData];
   const failed = allEntries.filter(e => e.status === "failed").length;
   document.getElementById("statFailed").textContent = failed;
   document.getElementById("statFailed").parentElement.style.background =
@@ -443,61 +512,114 @@ function updateStats() {
 }
 
 // --- RENDERING ---
-function renderCards() {
-  const container = document.getElementById("cardsList");
-  let items = [];
+function renderAll() {
+  const container = document.getElementById("mainContent");
+  let html = "";
 
+  // --- TODAY ---
+  const todayItems = getTodayItems();
+  html += `<div class="section-header">\ud83d\udcc5 Aujourd'hui <span class="count">${todayItems.length}</span></div>`;
+  if (todayItems.length > 0) {
+    html += `<div class="cards">${todayItems.map(item => renderCard(item, false)).join("")}</div>`;
+  } else {
+    html += `<div class="cards"><div class="empty"><div class="icon">\ud83d\udced</div><div class="title">Pas de check-in aujourd'hui</div></div></div>`;
+  }
+
+  // --- TOMORROW (J-1 preview) ---
+  const tmrwIssues = getTomorrowIssues();
+  const tmrwAll = getTomorrowItems();
+  if (tmrwAll.length > 0) {
+    const issueCount = tmrwIssues.length;
+    const label = issueCount > 0
+      ? `\ud83d\udd2e Demain \u2014 <span style="color:var(--orange)">${issueCount} \u00e9l\u00e9ment${issueCount > 1 ? "s" : ""} manquant${issueCount > 1 ? "s" : ""}</span>`
+      : `\ud83d\udd2e Demain \u2014 tout est pr\u00eat`;
+    html += `<div class="section-header tomorrow">${label} <span class="count">${tmrwAll.length}</span></div>`;
+    const itemsToShow = issueCount > 0 ? tmrwIssues : tmrwAll;
+    html += `<div class="cards cards-bottom">${itemsToShow.map(item => renderCard(item, true)).join("")}</div>`;
+  }
+
+  if (tmrwAll.length === 0) {
+    html += `<div style="height:100px"></div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function getTodayItems() {
+  let items = [];
   if (activeTab === "all" || activeTab === "email") {
     items.push(...emailData.map(e => ({ ...e, _type: "email" })));
   }
   if (activeTab === "all" || activeTab === "sakani") {
     items.push(...sakaniData.map(e => ({ ...e, _type: "sakani" })));
   }
-
-  // Apply filter
   if (activeFilter !== "all") {
     const allowed = activeFilter.split(",");
     items = items.filter(e => allowed.includes(e.status));
   }
+  return items;
+}
 
-  if (items.length === 0) {
-    container.innerHTML = `
-      <div class="empty">
-        <div class="icon">${activeFilter === "failed" ? "🎉" : "📭"}</div>
-        <div class="title">${activeFilter === "failed" ? "Aucune erreur !" : "Rien à afficher"}</div>
-        <div>${activeFilter === "failed" ? "Tout fonctionne correctement" : "Aucune entrée pour ce filtre aujourd'hui"}</div>
-      </div>`;
-    return;
+function getTomorrowItems() {
+  let items = [];
+  if (activeTab === "all" || activeTab === "email") {
+    items.push(...tomorrowEmailData.map(e => ({ ...e, _type: "email" })));
+  }
+  if (activeTab === "all" || activeTab === "sakani") {
+    items.push(...tomorrowSakaniData.map(e => ({ ...e, _type: "sakani" })));
+  }
+  return items;
+}
+
+function getTomorrowIssues() {
+  const ISSUE_STATUSES = ["no_contact", "waiting_dtcm", "waiting_passport", "failed", "portal_manual", "whatsapp_manual"];
+  let items = getTomorrowItems();
+  // For sakani: flag pending without passport
+  return items.filter(item => {
+    if (ISSUE_STATUSES.includes(item.status)) return true;
+    if (item._type === "sakani" && item.status === "pending" && !item.passport_file_path) return true;
+    return false;
+  });
+}
+
+function renderCard(item, isTomorrow) {
+  const isEmail = item._type === "email";
+  const guestName = isEmail ? (item.guest_name || "-") : `${item.guest_first_name || ""} ${item.guest_last_name || ""}`.trim() || "-";
+  const icon = STATUS_ICONS[item.status] || "\u23f3";
+  const label = STATUS_LABELS[item.status] || item.status;
+  const typeLabel = isEmail ? "\ud83d\udce7 Email Building" : "\ud83c\udfdb\ufe0f Sakani";
+
+  let alertHtml = "";
+  if (item.status === "failed" && item.error_message) {
+    alertHtml = `<div class="error-msg">\u26a0\ufe0f ${escHtml((item.error_message || "").substring(0, 200))}</div>`;
+  } else if (item.status === "no_contact") {
+    alertHtml = `<div class="warning-msg">\u26a0\ufe0f Aucun contact pour ce building. Ajouter dans building_contacts.</div>`;
+  } else if (item.status === "waiting_dtcm") {
+    alertHtml = `<div class="warning-msg">\ud83d\udcc4 DTCM permit manquant. Uploader avant l'envoi.</div>`;
+  } else if (item.status === "waiting_passport") {
+    alertHtml = `<div class="warning-msg">\ud83d\udec2 Passeport manquant. Uploader pour proc\u00e9der.</div>`;
+  } else if (item._type === "sakani" && item.status === "pending" && !item.passport_file_path) {
+    alertHtml = `<div class="warning-msg">\ud83d\udec2 Passeport pas encore upload\u00e9. Sakani ne pourra pas soumettre.</div>`;
   }
 
-  container.innerHTML = items.map(item => {
-    const isEmail = item._type === "email";
-    const guestName = isEmail ? (item.guest_name || "-") : `${item.guest_first_name || ""} ${item.guest_last_name || ""}`.trim();
-    const icon = STATUS_ICONS[item.status] || "⏳";
-    const label = STATUS_LABELS[item.status] || item.status;
-    const typeLabel = isEmail ? "📧 Email Building" : "🏛️ Sakani";
-    const errorHtml = item.status === "failed" && (item.error_message)
-      ? `<div class="error-msg">⚠️ ${escHtml((item.error_message || "").substring(0, 200))}</div>` : "";
-
-    return `
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="guest-name">${escHtml(guestName)}</div>
-            <div class="res-id">${typeLabel} · #${escHtml(item.reservation_id || "-")}</div>
-          </div>
-          <div class="status-badge ${statusClass(item.status)}">${icon} ${label}</div>
+  return `
+    <div class="card${isTomorrow ? " tomorrow-card" : ""}">
+      <div class="card-header">
+        <div>
+          <div class="guest-name">${escHtml(guestName)}</div>
+          <div class="res-id">${typeLabel} \u00b7 #${escHtml(item.reservation_id || "-")}</div>
         </div>
-        <div class="card-details">
-          <div class="detail"><span class="icon">🏢</span><span class="val">${escHtml(item.building || "-")}</span></div>
-          <div class="detail"><span class="icon">🚪</span><span class="val">Apt ${escHtml(item.apartment_no || "-")}</span></div>
-          <div class="detail"><span class="icon">📅</span><span class="val">${formatDateShort(item.checkin_date)} → ${formatDateShort(item.checkout_date)}</span></div>
-          ${!isEmail ? `<div class="detail"><span class="icon">🌍</span><span class="val">${escHtml(item.nationality || "-")}</span></div>` :
-            `<div class="detail"><span class="icon">📨</span><span class="val">${escHtml((item.building_email || "-").split("@")[0])}</span></div>`}
-        </div>
-        ${errorHtml}
-      </div>`;
-  }).join("");
+        <div class="status-badge ${statusClass(item.status)}">${icon} ${label}</div>
+      </div>
+      <div class="card-details">
+        <div class="detail"><span class="icon">\ud83c\udfe2</span><span class="val">${escHtml(item.building || "-")}</span></div>
+        <div class="detail"><span class="icon">\ud83d\udeaa</span><span class="val">Apt ${escHtml(item.apartment_no || "-")}</span></div>
+        <div class="detail"><span class="icon">\ud83d\udcc5</span><span class="val">${formatDateShort(item.checkin_date)} \u2192 ${formatDateShort(item.checkout_date)}</span></div>
+        ${!isEmail ? `<div class="detail"><span class="icon">\ud83c\udf0d</span><span class="val">${escHtml(item.nationality || "-")}</span></div>` :
+          `<div class="detail"><span class="icon">\ud83d\udce8</span><span class="val">${escHtml((item.building_email || "-").split("@")[0])}</span></div>`}
+      </div>
+      ${alertHtml}
+    </div>`;
 }
 
 function escHtml(s) {
@@ -512,7 +634,7 @@ document.querySelectorAll(".tab").forEach(tab => {
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     tab.classList.add("active");
     activeTab = tab.dataset.tab;
-    renderCards();
+    renderAll();
   });
 });
 
@@ -522,22 +644,17 @@ document.querySelectorAll(".filter-chip").forEach(chip => {
     document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
     chip.classList.add("active");
     activeFilter = chip.dataset.filter;
-    renderCards();
+    renderAll();
   });
 });
 
 // --- REAL-TIME SUBSCRIPTIONS ---
 function setupRealtime() {
   sb.channel("dashboard-email")
-    .on("postgres_changes", { event: "*", schema: "public", table: "email_log" }, () => {
-      loadAll();
-    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "email_log" }, () => loadAll())
     .subscribe();
-
   sb.channel("dashboard-sakani")
-    .on("postgres_changes", { event: "*", schema: "public", table: "sakani_queue" }, () => {
-      loadAll();
-    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "sakani_queue" }, () => loadAll())
     .subscribe();
 }
 
