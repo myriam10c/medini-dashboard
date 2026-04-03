@@ -374,23 +374,23 @@ body {
     <div class="stat-card"><div class="stat-num" id="statTotal">-</div><div class="stat-label">Check-ins</div></div>
     <div class="stat-card"><div class="stat-num" id="statEmail">-</div><div class="stat-label">Emails</div></div>
     <div class="stat-card"><div class="stat-num" id="statSakani">-</div><div class="stat-label">Sakani</div></div>
-    <div class="stat-card"><div class="stat-num" id="statFailed">-</div><div class="stat-label">Erreurs</div></div>
+    <div class="stat-card"><div class="stat-num" id="statFailed">-</div><div class="stat-label">Errors</div></div>
   </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" data-tab="all">Tout <span class="badge" id="badgeAll">0</span></div>
+  <div class="tab active" data-tab="all">All <span class="badge" id="badgeAll">0</span></div>
   <div class="tab" data-tab="email">Emails <span class="badge" id="badgeEmail">0</span></div>
   <div class="tab" data-tab="sakani">Sakani <span class="badge" id="badgeSakani">0</span></div>
 </div>
 
 <div class="filters" id="filterBar">
-  <div class="filter-chip active" data-filter="all">Tous</div>
-  <div class="filter-chip" data-filter="submitted,sent">Fait</div>
-  <div class="filter-chip" data-filter="ready,pending,draft_created">En attente</div>
-  <div class="filter-chip" data-filter="processing">En cours</div>
-  <div class="filter-chip" data-filter="no_contact,waiting_dtcm,waiting_passport">Manquant</div>
-  <div class="filter-chip" data-filter="failed">Erreurs</div>
+  <div class="filter-chip active" data-filter="all">All</div>
+  <div class="filter-chip" data-filter="submitted,sent">Done</div>
+  <div class="filter-chip" data-filter="ready,pending,draft_created">Pending</div>
+  <div class="filter-chip" data-filter="processing">Processing</div>
+  <div class="filter-chip" data-filter="no_contact,waiting_dtcm,waiting_passport">Missing</div>
+  <div class="filter-chip" data-filter="failed">Errors</div>
 </div>
 
 <div id="mainContent">
@@ -398,8 +398,8 @@ body {
 </div>
 
 <div class="update-bar">
-  <span id="lastUpdate">Chargement...</span>
-  <button class="refresh-btn" onclick="loadAll()">Rafraichir</button>
+  <span id="lastUpdate">Loading...</span>
+  <button class="refresh-btn" onclick="loadAll()">Refresh</button>
 </div>
 
 <script>
@@ -436,17 +436,17 @@ function tomorrowDubai() {
 function formatDateShort(d) {
   if (!d) return "-";
   const dt = new Date(d + "T00:00:00");
-  return dt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  return dt.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 function formatDateFull(d) {
   if (!d) return "-";
   const dt = new Date(d + "T00:00:00");
-  return dt.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
+  return dt.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
 }
 
 function dubaiTimeNow() {
-  return new Intl.DateTimeFormat("fr-FR", { timeZone: "Asia/Dubai", hour: "2-digit", minute: "2-digit" }).format(new Date());
+  return new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Dubai", hour: "2-digit", minute: "2-digit" }).format(new Date());
 }
 
 // --- STATUS HELPERS ---
@@ -457,10 +457,10 @@ const STATUS_ICONS = {
   portal_manual: "\ud83d\udcbb", whatsapp_manual: "\ud83d\udcf1"
 };
 const STATUS_LABELS = {
-  submitted: "Soumis", sent: "Envoy\u00e9", ready: "En attente", pending: "En attente",
-  draft_created: "Brouillon", processing: "En cours", failed: "\u00c9chou\u00e9",
-  no_contact: "Pas de contact", waiting_dtcm: "DTCM manquant", waiting_passport: "Passeport manquant",
-  portal_manual: "Portail manuel", whatsapp_manual: "WhatsApp manuel"
+  submitted: "Submitted", sent: "Sent", ready: "Pending", pending: "Pending",
+  draft_created: "Draft", processing: "Processing", failed: "Failed",
+  no_contact: "No contact", waiting_dtcm: "Missing DTCM", waiting_passport: "Missing passport",
+  portal_manual: "Manual portal", whatsapp_manual: "Manual WhatsApp"
 };
 
 function statusClass(s) {
@@ -487,7 +487,7 @@ async function loadAll() {
 
   updateStats();
   renderAll();
-  document.getElementById("lastUpdate").textContent = `Mis \u00e0 jour \u00e0 ${dubaiTimeNow()} (Dubai)`;
+  document.getElementById("lastUpdate").textContent = `Updated at ${dubaiTimeNow()} (Dubai)`;
 }
 
 function updateStats() {
@@ -518,11 +518,11 @@ function renderAll() {
 
   // --- TODAY ---
   const todayItems = getTodayItems();
-  html += `<div class="section-header">\ud83d\udcc5 Aujourd'hui <span class="count">${todayItems.length}</span></div>`;
+  html += `<div class="section-header">\ud83d\udcc5 Today <span class="count">${todayItems.length}</span></div>`;
   if (todayItems.length > 0) {
     html += `<div class="cards">${todayItems.map(item => renderCard(item, false)).join("")}</div>`;
   } else {
-    html += `<div class="cards"><div class="empty"><div class="icon">\ud83d\udced</div><div class="title">Pas de check-in aujourd'hui</div></div></div>`;
+    html += `<div class="cards"><div class="empty"><div class="icon">\ud83d\udced</div><div class="title">No check-ins today</div></div></div>`;
   }
 
   // --- TOMORROW (J-1 preview) ---
@@ -531,8 +531,8 @@ function renderAll() {
   if (tmrwAll.length > 0) {
     const issueCount = tmrwIssues.length;
     const label = issueCount > 0
-      ? `\ud83d\udd2e Demain \u2014 <span style="color:var(--orange)">${issueCount} \u00e9l\u00e9ment${issueCount > 1 ? "s" : ""} manquant${issueCount > 1 ? "s" : ""}</span>`
-      : `\ud83d\udd2e Demain \u2014 tout est pr\u00eat`;
+      ? `\ud83d\udd2e Tomorrow \u2014 <span style="color:var(--orange)">${issueCount} missing item${issueCount > 1 ? "s" : ""}</span>`
+      : `\ud83d\udd2e Tomorrow \u2014 all set`;
     html += `<div class="section-header tomorrow">${label} <span class="count">${tmrwAll.length}</span></div>`;
     const itemsToShow = issueCount > 0 ? tmrwIssues : tmrwAll;
     html += `<div class="cards cards-bottom">${itemsToShow.map(item => renderCard(item, true)).join("")}</div>`;
@@ -593,13 +593,13 @@ function renderCard(item, isTomorrow) {
   if (item.status === "failed" && item.error_message) {
     alertHtml = `<div class="error-msg">\u26a0\ufe0f ${escHtml((item.error_message || "").substring(0, 200))}</div>`;
   } else if (item.status === "no_contact") {
-    alertHtml = `<div class="warning-msg">\u26a0\ufe0f Aucun contact pour ce building. Ajouter dans building_contacts.</div>`;
+    alertHtml = `<div class="warning-msg">\u26a0\ufe0f No contact for this building. Add to building_contacts.</div>`;
   } else if (item.status === "waiting_dtcm") {
-    alertHtml = `<div class="warning-msg">\ud83d\udcc4 DTCM permit manquant. Uploader avant l'envoi.</div>`;
+    alertHtml = `<div class="warning-msg">\ud83d\udcc4 Missing DTCM permit. Upload before sending.</div>`;
   } else if (item.status === "waiting_passport") {
-    alertHtml = `<div class="warning-msg">\ud83d\udec2 Passeport manquant. Uploader pour proc\u00e9der.</div>`;
+    alertHtml = `<div class="warning-msg">\ud83d\udec2 Missing passport. Upload to proceed.</div>`;
   } else if (item._type === "sakani" && item.status === "pending" && !item.passport_file_path) {
-    alertHtml = `<div class="warning-msg">\ud83d\udec2 Passeport pas encore upload\u00e9. Sakani ne pourra pas soumettre.</div>`;
+    alertHtml = `<div class="warning-msg">\ud83d\udec2 Passport not yet uploaded. Sakani cannot submit.</div>`;
   }
 
   return `
