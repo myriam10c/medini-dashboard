@@ -81,7 +81,7 @@ body {
 /* --- STATS ROW --- */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
 }
 .stat-card {
@@ -105,6 +105,12 @@ body {
   letter-spacing: 0.5px;
   font-weight: 600;
 }
+.stat-value {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 2px;
+  font-weight: 500;
+}
 
 /* --- TABS --- */
 .tabs {
@@ -116,6 +122,8 @@ body {
   position: sticky;
   top: 89px;
   z-index: 99;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .tab {
   padding: 10px 16px;
@@ -126,6 +134,7 @@ body {
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   user-select: none;
+  white-space: nowrap;
 }
 .tab.active {
   color: var(--accent);
@@ -165,6 +174,43 @@ body {
   user-select: none;
 }
 .filter-chip.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* --- BUILDING FILTER --- */
+.building-filter {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.building-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.building-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.building-chip {
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  transition: all 0.2s;
+  user-select: none;
+}
+.building-chip.active {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
@@ -211,6 +257,7 @@ body {
   padding: 14px;
   border: 1px solid var(--border);
   transition: background 0.2s;
+  position: relative;
 }
 .card.tomorrow-card {
   border-color: rgba(168,85,247,0.3);
@@ -222,6 +269,9 @@ body {
   align-items: flex-start;
   margin-bottom: 10px;
 }
+.card-title {
+  flex: 1;
+}
 .guest-name {
   font-size: 15px;
   font-weight: 600;
@@ -231,6 +281,11 @@ body {
   font-size: 11px;
   color: var(--text-dim);
   margin-top: 2px;
+}
+.card-header-right {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 .status-badge {
   display: inline-flex;
@@ -254,6 +309,54 @@ body {
 .status-waiting_passport { background: var(--orange-bg); color: var(--orange); }
 .status-portal_manual { background: var(--purple-bg); color: var(--purple); }
 .status-whatsapp_manual { background: var(--purple-bg); color: var(--purple); }
+
+.card-countdown {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 16px;
+  white-space: nowrap;
+  background: rgba(245,158,11,0.15);
+  color: var(--orange);
+}
+.card-countdown.overdue {
+  background: rgba(239,68,68,0.15);
+  color: var(--red);
+}
+.card-countdown.completed {
+  background: rgba(34,197,94,0.15);
+  color: var(--green);
+}
+
+.card-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 4px;
+}
+.card-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card-hover);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+  font-family: inherit;
+}
+.card-action-btn:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.card-action-btn:active { transform: scale(0.92); }
 
 .card-details {
   display: grid;
@@ -312,6 +415,64 @@ body {
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- CALENDAR VIEW --- */
+.calendar-view {
+  padding: 16px;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 20px;
+}
+.calendar-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 8px;
+  text-align: center;
+}
+.calendar-cell:hover { background: var(--card-hover); }
+.calendar-cell.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.calendar-cell-day {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.calendar-cell.active .calendar-cell-day { color: white; }
+.calendar-cell-count {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.calendar-cell.active .calendar-cell-count { color: rgba(255,255,255,0.7); }
+.calendar-cell-dots {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+  justify-content: center;
+}
+.calendar-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.calendar-dot.email { background: var(--blue); }
+.calendar-dot.sakani { background: var(--purple); }
+.calendar-dot.error { background: var(--red); }
 
 /* --- LAST UPDATE BAR --- */
 .update-bar {
@@ -378,6 +539,7 @@ body {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
+
 .toast {
   position: fixed;
   bottom: 56px;
@@ -400,9 +562,10 @@ body {
 /* --- DESKTOP --- */
 @media (min-width: 768px) {
   .header { padding: 24px 32px 20px; }
-  .stats-row { max-width: 600px; }
+  .stats-row { max-width: 100%; }
   .tabs { padding: 12px 32px 0; }
   .filters { padding: 12px 32px; }
+  .building-filter { padding: 8px 32px; }
   .section-header { padding: 14px 32px 6px; }
   .cards {
     padding: 4px 32px 8px;
@@ -427,17 +590,35 @@ body {
     <div class="date-label"><span class="live-dot"></span><span id="todayDate"></span></div>
   </div>
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-num" id="statTotal">-</div><div class="stat-label">Check-ins</div></div>
-    <div class="stat-card"><div class="stat-num" id="statEmail">-</div><div class="stat-label">Emails</div></div>
-    <div class="stat-card"><div class="stat-num" id="statSakani">-</div><div class="stat-label">Sakani</div></div>
-    <div class="stat-card"><div class="stat-num" id="statFailed">-</div><div class="stat-label">Errors</div></div>
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">-</div>
+      <div class="stat-label">Total</div>
+      <div class="stat-value" id="statRate">-</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statEmail">-</div>
+      <div class="stat-label">Email</div>
+      <div class="stat-value">Sent</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statSakani">-</div>
+      <div class="stat-label">Portal</div>
+      <div class="stat-value">Submitted</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statPending">-</div>
+      <div class="stat-label">Pending</div>
+      <div class="stat-value" id="statChannels">-</div>
+    </div>
   </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" data-tab="all">All <span class="badge" id="badgeAll">0</span></div>
-  <div class="tab" data-tab="email">Emails <span class="badge" id="badgeEmail">0</span></div>
-  <div class="tab" data-tab="sakani">Sakani <span class="badge" id="badgeSakani">0</span></div>
+  <div class="tab active" data-tab="today">📅 Today <span class="badge" id="badgeToday">0</span></div>
+  <div class="tab" data-tab="tomorrow">🔮 Tomorrow <span class="badge" id="badgeTomorrow">0</span></div>
+  <div class="tab" data-tab="plus2">+2 days <span class="badge" id="badgePlus2">0</span></div>
+  <div class="tab" data-tab="plus3">+3 days <span class="badge" id="badgePlus3">0</span></div>
+  <div class="tab" data-tab="calendar">📆 Calendar</div>
 </div>
 
 <div class="filters" id="filterBar">
@@ -447,6 +628,11 @@ body {
   <div class="filter-chip" data-filter="processing">Processing</div>
   <div class="filter-chip" data-filter="no_contact,waiting_dtcm,waiting_passport">Missing</div>
   <div class="filter-chip" data-filter="failed">Errors</div>
+</div>
+
+<div class="building-filter">
+  <div class="building-filter-label">Buildings</div>
+  <div class="building-chips" id="buildingChips"></div>
 </div>
 
 <div class="action-bar">
@@ -474,22 +660,26 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // --- STATE ---
 let emailData = [];
 let sakaniData = [];
-let tomorrowEmailData = [];
-let tomorrowSakaniData = [];
-let activeTab = "all";
+let plus2EmailData = [];
+let plus2SakaniData = [];
+let plus3EmailData = [];
+let plus3SakaniData = [];
+let allDaysData = {};
+let activeTab = "today";
 let activeFilter = "all";
+let selectedBuilding = "all";
+const HIDDEN = ["superseded", "webhook_noise", "error", "cancelled"];
 
-// --- RELIABLE Dubai date using Intl API ---
+// --- Dubai timezone functions ---
 function todayDubai() {
   const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai", year: "numeric", month: "2-digit", day: "2-digit" });
-  return formatter.format(new Date()); // returns YYYY-MM-DD
+  return formatter.format(new Date());
 }
 
-function tomorrowDubai() {
-  const now = new Date();
-  const dubaiStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-  const d = new Date(dubaiStr + "T00:00:00");
-  d.setDate(d.getDate() + 1);
+function addDaysDubai(n) {
+  const today = todayDubai();
+  const d = new Date(today + "T00:00:00");
+  d.setDate(d.getDate() + n);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
@@ -512,12 +702,28 @@ function dubaiTimeNow() {
   return new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Dubai", hour: "2-digit", minute: "2-digit" }).format(new Date());
 }
 
+function getCountdownText(checkinDate, isTomorrow) {
+  const today = todayDubai();
+  if (checkinDate === today) {
+    const now = new Date();
+    const dubaiTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Dubai" }));
+    const ciDate = new Date(checkinDate + "T23:59:59");
+    const diff = ciDate - dubaiTime;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (diff < 0) return "Overdue";
+    if (hours <= 0) return `${minutes}m left`;
+    return `${hours}h left`;
+  }
+  return formatDateShort(checkinDate);
+}
+
 // --- STATUS HELPERS ---
 const STATUS_ICONS = {
-  submitted: "\u2705", sent: "\u2705", ready: "\u23f3", pending: "\u23f3",
-  draft_created: "\ud83d\udcdd", processing: "\u2699\ufe0f", failed: "\u274c",
-  no_contact: "\u274c", waiting_dtcm: "\ud83d\udcc4", waiting_passport: "\ud83d\udec2",
-  portal_manual: "\ud83d\udcbb", whatsapp_manual: "\ud83d\udcf1"
+  submitted: "✅", sent: "✅", ready: "⏳", pending: "⏳",
+  draft_created: "📝", processing: "⚙️", failed: "❌",
+  no_contact: "❌", waiting_dtcm: "📄", waiting_passport: "🛂",
+  portal_manual: "💻", whatsapp_manual: "📱"
 };
 const STATUS_LABELS = {
   submitted: "Submitted", sent: "Sent", ready: "Pending", pending: "Pending",
@@ -534,85 +740,215 @@ function statusClass(s) {
 // --- DATA LOADING ---
 async function loadAll() {
   const today = todayDubai();
-  const tomorrow = tomorrowDubai();
+  const tomorrow = addDaysDubai(1);
+  const plus2 = addDaysDubai(2);
+  const plus3 = addDaysDubai(3);
   document.getElementById("todayDate").textContent = formatDateFull(today);
 
-  const [emailRes, sakaniRes, tmrwEmailRes, tmrwSakaniRes] = await Promise.all([
+  const [emailRes, sakaniRes, tmrwEmailRes, tmrwSakaniRes, plus2EmailRes, plus2SakaniRes, plus3EmailRes, plus3SakaniRes] = await Promise.all([
     sb.from("email_log").select("*").eq("checkin_date", today).order("created_at", { ascending: true }),
     sb.from("sakani_queue").select("*").eq("checkin_date", today).order("created_at", { ascending: true }),
     sb.from("email_log").select("*").eq("checkin_date", tomorrow).order("created_at", { ascending: true }),
     sb.from("sakani_queue").select("*").eq("checkin_date", tomorrow).order("created_at", { ascending: true }),
+    sb.from("email_log").select("*").eq("checkin_date", plus2).order("created_at", { ascending: true }),
+    sb.from("sakani_queue").select("*").eq("checkin_date", plus2).order("created_at", { ascending: true }),
+    sb.from("email_log").select("*").eq("checkin_date", plus3).order("created_at", { ascending: true }),
+    sb.from("sakani_queue").select("*").eq("checkin_date", plus3).order("created_at", { ascending: true }),
   ]);
 
-  const HIDDEN = ["superseded", "webhook_noise", "error", "cancelled"];
   emailData = (emailRes.data || []).filter(e => !HIDDEN.includes(e.status));
   sakaniData = sakaniRes.data || [];
-  tomorrowEmailData = (tmrwEmailRes.data || []).filter(e => !HIDDEN.includes(e.status));
-  tomorrowSakaniData = tmrwSakaniRes.data || [];
+  plus2EmailData = (plus2EmailRes.data || []).filter(e => !HIDDEN.includes(e.status));
+  plus2SakaniData = plus2SakaniRes.data || [];
+  plus3EmailData = (plus3EmailRes.data || []).filter(e => !HIDDEN.includes(e.status));
+  plus3SakaniData = plus3SakaniRes.data || [];
 
+  allDaysData = {
+    today: { email: emailData, sakani: sakaniData },
+    tomorrow: { email: (tmrwEmailRes.data || []).filter(e => !HIDDEN.includes(e.status)), sakani: tmrwSakaniRes.data || [] },
+    plus2: { email: plus2EmailData, sakani: plus2SakaniData },
+    plus3: { email: plus3EmailData, sakani: plus3SakaniData }
+  };
+
+  updateBuildingFilter();
   updateStats();
   renderAll();
   document.getElementById("lastUpdate").textContent = `Updated at ${dubaiTimeNow()} (Dubai)`;
 }
 
+function updateBuildingFilter() {
+  const buildings = new Set();
+  [...emailData, ...sakaniData, ...plus2EmailData, ...plus2SakaniData, ...plus3EmailData, ...plus3SakaniData].forEach(item => {
+    if (item.building) buildings.add(item.building);
+  });
+  const sorted = Array.from(buildings).sort();
+  const chipsHtml = '<div class="building-chip active" data-building="all">All</div>' +
+    sorted.map(b => `<div class="building-chip" data-building="${escHtml(b)}">${escHtml(b)}</div>`).join("");
+  document.getElementById("buildingChips").innerHTML = chipsHtml;
+  document.querySelectorAll(".building-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".building-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      selectedBuilding = chip.dataset.building;
+      renderAll();
+    });
+  });
+}
+
 function updateStats() {
-  const uniqueRes = new Set([...emailData.map(e => e.reservation_id), ...sakaniData.map(e => e.reservation_id)]);
+  const allItems = [...emailData, ...sakaniData, ...plus2EmailData, ...plus2SakaniData, ...plus3EmailData, ...plus3SakaniData];
+  const uniqueRes = new Set(allItems.map(e => e.reservation_id));
   document.getElementById("statTotal").textContent = uniqueRes.size;
 
-  const emailDone = emailData.filter(e => e.status === "sent").length;
-  document.getElementById("statEmail").textContent = `${emailDone}/${emailData.length}`;
+  const emailSent = emailData.filter(e => e.status === "sent").length;
+  document.getElementById("statEmail").textContent = emailSent;
 
-  const sakaniDone = sakaniData.filter(e => e.status === "submitted").length;
-  document.getElementById("statSakani").textContent = `${sakaniDone}/${sakaniData.length}`;
+  const sakaniSubmitted = sakaniData.filter(e => e.status === "submitted").length;
+  document.getElementById("statSakani").textContent = sakaniSubmitted;
 
-  const allEntries = [...emailData, ...sakaniData];
-  const failed = allEntries.filter(e => e.status === "failed").length;
-  document.getElementById("statFailed").textContent = failed;
-  document.getElementById("statFailed").parentElement.style.background =
-    failed > 0 ? "rgba(239,68,68,0.2)" : "";
+  const pending = allItems.filter(e => ["pending", "ready", "draft_created", "processing"].includes(e.status)).length;
+  document.getElementById("statPending").textContent = pending;
 
-  document.getElementById("badgeAll").textContent = emailData.length + sakaniData.length;
-  document.getElementById("badgeEmail").textContent = emailData.length;
-  document.getElementById("badgeSakani").textContent = sakaniData.length;
+  const automationCount = [...emailData, ...sakaniData].filter(e => ["sent", "submitted", "processing"].includes(e.status)).length;
+  const totalToday = emailData.length + sakaniData.length;
+  const rate = totalToday > 0 ? Math.round((automationCount / totalToday) * 100) : 0;
+  document.getElementById("statRate").textContent = `${rate}% auto`;
+
+  document.getElementById("badgeToday").textContent = emailData.length + sakaniData.length;
+  document.getElementById("badgeTomorrow").textContent = allDaysData.tomorrow.email.length + allDaysData.tomorrow.sakani.length;
+  document.getElementById("badgePlus2").textContent = plus2EmailData.length + plus2SakaniData.length;
+  document.getElementById("badgePlus3").textContent = plus3EmailData.length + plus3SakaniData.length;
 }
 
 // --- RENDERING ---
 function renderAll() {
   const container = document.getElementById("mainContent");
+
+  if (activeTab === "calendar") {
+    renderCalendar(container);
+    return;
+  }
+
   let html = "";
+  let dateKey, dayLabel, dayData;
 
-  // --- TODAY ---
-  const todayItems = getTodayItems();
-  html += `<div class="section-header">\ud83d\udcc5 Today <span class="count">${todayItems.length}</span></div>`;
-  if (todayItems.length > 0) {
-    html += `<div class="cards">${todayItems.map(item => renderCard(item, false)).join("")}</div>`;
+  if (activeTab === "today") {
+    dateKey = "today";
+    dayLabel = "📅 Today";
+    dayData = allDaysData.today;
+  } else if (activeTab === "tomorrow") {
+    dateKey = "tomorrow";
+    dayLabel = "🔮 Tomorrow";
+    dayData = allDaysData.tomorrow;
+  } else if (activeTab === "plus2") {
+    dateKey = "plus2";
+    dayLabel = "+2 Days";
+    dayData = allDaysData.plus2;
   } else {
-    html += `<div class="cards"><div class="empty"><div class="icon">\ud83d\udced</div><div class="title">No check-ins today</div></div></div>`;
+    dateKey = "plus3";
+    dayLabel = "+3 Days";
+    dayData = allDaysData.plus3;
   }
 
-  // --- TOMORROW (J-1 preview) ---
-  const tmrwIssues = getTomorrowIssues();
-  const tmrwAll = getTomorrowItems();
-  if (tmrwAll.length > 0) {
-    const issueCount = tmrwIssues.length;
-    const label = issueCount > 0
-      ? `\ud83d\udd2e Tomorrow \u2014 <span style="color:var(--orange)">${issueCount} missing item${issueCount > 1 ? "s" : ""}</span>`
-      : `\ud83d\udd2e Tomorrow \u2014 all set`;
-    html += `<div class="section-header tomorrow">${label} <span class="count">${tmrwAll.length}</span></div>`;
-    const itemsToShow = issueCount > 0 ? tmrwIssues : tmrwAll;
-    html += `<div class="cards cards-bottom">${itemsToShow.map(item => renderCard(item, true)).join("")}</div>`;
+  const items = getFilteredItems(dayData);
+  html += `<div class="section-header${dateKey !== "today" ? " tomorrow" : ""}">${dayLabel} <span class="count">${items.length}</span></div>`;
+
+  if (items.length > 0) {
+    html += `<div class="cards${dateKey !== "today" ? " cards-bottom" : ""}">${items.map(item => renderCard(item, dateKey !== "today")).join("")}</div>`;
+  } else {
+    html += `<div class="cards"><div class="empty"><div class="icon">🎉</div><div class="title">No check-ins</div></div></div>`;
   }
 
-  if (tmrwAll.length === 0) {
+  if (dateKey !== "today") {
     html += `<div style="height:100px"></div>`;
   }
 
   container.innerHTML = html;
+  attachCardActions();
+}
+
+function renderCalendar(container) {
+  const today = todayDubai();
+  const dates = [];
+  for (let i = 0; i < 30; i++) {
+    dates.push(addDaysDubai(i));
+  }
+
+  let html = '<div class="calendar-view">';
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px;text-align:center;font-size:11px;font-weight:600;color:var(--text-dim);">';
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
+    html += `<div>${d}</div>`;
+  });
+  html += '</div>';
+
+  html += '<div class="calendar-grid">';
+  dates.forEach(date => {
+    const dateData = allDaysData[Object.keys(allDaysData).find(k => {
+      const d = todayDubai();
+      if (k === "today") return date === d;
+      if (k === "tomorrow") return date === addDaysDubai(1);
+      if (k === "plus2") return date === addDaysDubai(2);
+      if (k === "plus3") return date === addDaysDubai(3);
+      return false;
+    })] || { email: [], sakani: [] };
+
+    const allItems = [...dateData.email, ...dateData.sakani];
+    const emailCount = dateData.email.length;
+    const sakaniCount = dateData.sakani.length;
+    const errorCount = allItems.filter(e => e.status === "failed").length;
+    const dt = new Date(date + "T00:00:00");
+    const day = dt.getDate();
+
+    html += `<div class="calendar-cell${date === today ? " active" : ""}" onclick="switchToDate('${date}')">
+      <div class="calendar-cell-day">${day}</div>
+      ${allItems.length > 0 ? `<div class="calendar-cell-count">${allItems.length}</div>` : ""}
+      <div class="calendar-cell-dots">
+        ${emailCount > 0 ? '<span class="calendar-dot email"></span>' : ""}
+        ${sakaniCount > 0 ? '<span class="calendar-dot sakani"></span>' : ""}
+        ${errorCount > 0 ? '<span class="calendar-dot error"></span>' : ""}
+      </div>
+    </div>`;
+  });
+  html += '</div></div>';
+
+  container.innerHTML = html;
+}
+
+function switchToDate(dateStr) {
+  const today = todayDubai();
+  if (dateStr === today) {
+    activeTab = "today";
+  } else if (dateStr === addDaysDubai(1)) {
+    activeTab = "tomorrow";
+  } else if (dateStr === addDaysDubai(2)) {
+    activeTab = "plus2";
+  } else if (dateStr === addDaysDubai(3)) {
+    activeTab = "plus3";
+  }
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelector(`[data-tab="${activeTab}"]`).classList.add("active");
+  renderAll();
+}
+
+function getFilteredItems(dayData) {
+  let items = [];
+  items.push(...dayData.email.map(e => ({ ...e, _type: "email" })));
+  items.push(...dayData.sakani.map(e => ({ ...e, _type: "sakani" })));
+
+  items = mergeByReservation(items);
+
+  if (selectedBuilding !== "all") {
+    items = items.filter(e => e.building === selectedBuilding);
+  }
+
+  if (activeFilter !== "all") {
+    const allowed = activeFilter.split(",");
+    items = items.filter(e => allowed.includes(e.status));
+  }
+  return items;
 }
 
 function mergeByReservation(items) {
-  // When both email_log and sakani_queue exist for the same reservation,
-  // keep only the most relevant card (portal done = no email needed)
   const grouped = {};
   items.forEach(item => {
     const key = item.reservation_id;
@@ -625,13 +961,9 @@ function mergeByReservation(items) {
     const sakani = group.find(i => i._type === "sakani");
     const email = group.find(i => i._type === "email");
     if (sakani && email) {
-      // Portal submitted → no email needed, show sakani only
       if (sakani.status === "submitted") { merged.push(sakani); return; }
-      // Email sent → show email only
       if (email.status === "sent") { merged.push(email); return; }
-      // Portal manual / whatsapp manual → done via other channel, show sakani if pending
       if (["portal_manual", "whatsapp_manual"].includes(email.status)) { merged.push(sakani); return; }
-      // Otherwise show both (different issues)
       merged.push(...group);
     } else {
       merged.push(...group);
@@ -640,81 +972,52 @@ function mergeByReservation(items) {
   return merged;
 }
 
-function getTodayItems() {
-  let items = [];
-  if (activeTab === "all" || activeTab === "email") {
-    items.push(...emailData.map(e => ({ ...e, _type: "email" })));
-  }
-  if (activeTab === "all" || activeTab === "sakani") {
-    items.push(...sakaniData.map(e => ({ ...e, _type: "sakani" })));
-  }
-  // Merge duplicates only in "all" tab
-  if (activeTab === "all") items = mergeByReservation(items);
-  if (activeFilter !== "all") {
-    const allowed = activeFilter.split(",");
-    items = items.filter(e => allowed.includes(e.status));
-  }
-  return items;
-}
-
-function getTomorrowItems() {
-  let items = [];
-  if (activeTab === "all" || activeTab === "email") {
-    items.push(...tomorrowEmailData.map(e => ({ ...e, _type: "email" })));
-  }
-  if (activeTab === "all" || activeTab === "sakani") {
-    items.push(...tomorrowSakaniData.map(e => ({ ...e, _type: "sakani" })));
-  }
-  if (activeTab === "all") items = mergeByReservation(items);
-  return items;
-}
-
-function getTomorrowIssues() {
-  const ISSUE_STATUSES = ["no_contact", "waiting_dtcm", "waiting_passport", "failed", "portal_manual", "whatsapp_manual"];
-  let items = getTomorrowItems();
-  // For sakani: flag pending without passport
-  return items.filter(item => {
-    if (ISSUE_STATUSES.includes(item.status)) return true;
-    if (item._type === "sakani" && item.status === "pending" && !item.passport_file_path) return true;
-    return false;
-  });
-}
-
 function renderCard(item, isTomorrow) {
   const isEmail = item._type === "email";
   const guestName = isEmail ? (item.guest_name || "-") : `${item.guest_first_name || ""} ${item.guest_last_name || ""}`.trim() || "-";
-  const icon = STATUS_ICONS[item.status] || "\u23f3";
+  const icon = STATUS_ICONS[item.status] || "⏳";
   const label = STATUS_LABELS[item.status] || item.status;
-  const typeLabel = isEmail ? "\ud83d\udce7 Email Building" : "\ud83c\udfdb\ufe0f Sakani";
+  const typeLabel = isEmail ? "📧 Email" : "🏛️ Portal";
+  const countdown = getCountdownText(item.checkin_date, isTomorrow);
 
   let alertHtml = "";
   if (item.status === "failed" && item.error_message) {
-    alertHtml = `<div class="error-msg">\u26a0\ufe0f ${escHtml((item.error_message || "").substring(0, 200))}</div>`;
+    alertHtml = `<div class="error-msg">⚠️ ${escHtml((item.error_message || "").substring(0, 200))}</div>`;
   } else if (item.status === "no_contact") {
-    alertHtml = `<div class="warning-msg">\u26a0\ufe0f No contact for this building. Add to building_contacts.</div>`;
+    alertHtml = `<div class="warning-msg">⚠️ No contact for this building. Add to building_contacts.</div>`;
   } else if (item.status === "waiting_dtcm") {
-    alertHtml = `<div class="warning-msg">\ud83d\udcc4 Missing DTCM permit. Upload before sending.</div>`;
+    alertHtml = `<div class="warning-msg">📄 Missing DTCM permit. Upload before sending.</div>`;
   } else if (item.status === "waiting_passport") {
-    alertHtml = `<div class="warning-msg">\ud83d\udec2 Missing passport. Upload to proceed.</div>`;
+    alertHtml = `<div class="warning-msg">🛂 Missing passport. Upload to proceed.</div>`;
   } else if (item._type === "sakani" && item.status === "pending" && !item.passport_file_path) {
-    alertHtml = `<div class="warning-msg">\ud83d\udec2 Passport not yet uploaded. Sakani cannot submit.</div>`;
+    alertHtml = `<div class="warning-msg">🛂 Passport not yet uploaded. Sakani cannot submit.</div>`;
   }
 
+  const countdownClass = item.status === "sent" || item.status === "submitted" ? "completed" :
+    (getCountdownText(item.checkin_date).includes("Overdue") ? "overdue" : "");
+
   return `
-    <div class="card${isTomorrow ? " tomorrow-card" : ""}">
+    <div class="card${isTomorrow ? " tomorrow-card" : ""}" data-id="${item.id}" data-type="${item._type}">
       <div class="card-header">
-        <div>
+        <div class="card-title">
           <div class="guest-name">${escHtml(guestName)}</div>
-          <div class="res-id">${typeLabel} \u00b7 #${escHtml(item.reservation_id || "-")}</div>
+          <div class="res-id">${typeLabel} · #${escHtml(item.reservation_id || "-")}</div>
         </div>
-        <div class="status-badge ${statusClass(item.status)}">${icon} ${label}</div>
+        <div class="card-header-right">
+          <div class="card-countdown${countdownClass ? " " + countdownClass : ""}">${countdown}</div>
+          <div class="status-badge ${statusClass(item.status)}">${icon} ${label}</div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="card-action-btn" title="Mark done" onclick="cardActionDone('${item.id}','${item._type}')">✓</button>
+        <button class="card-action-btn" title="Retry" onclick="cardActionRetry('${item.id}','${item._type}')">↻</button>
       </div>
       <div class="card-details">
-        <div class="detail"><span class="icon">\ud83c\udfe2</span><span class="val">${escHtml(item.building || "-")}</span></div>
-        <div class="detail"><span class="icon">\ud83d\udeaa</span><span class="val">Apt ${escHtml(item.apartment_no || "-")}</span></div>
-        <div class="detail"><span class="icon">\ud83d\udcc5</span><span class="val">${formatDateShort(item.checkin_date)} \u2192 ${formatDateShort(item.checkout_date)}</span></div>
-        ${!isEmail ? `<div class="detail"><span class="icon">\ud83c\udf0d</span><span class="val">${escHtml(item.nationality || "-")}</span></div>` :
-          `<div class="detail"><span class="icon">\ud83d\udce8</span><span class="val">${escHtml((item.building_email || "-").split("@")[0])}</span></div>`}
+        <div class="detail"><span class="icon">🏢</span><span class="val">${escHtml(item.building || "-")}</span></div>
+        <div class="detail"><span class="icon">🚪</span><span class="val">Apt ${escHtml(item.apartment_no || "-")}</span></div>
+        <div class="detail"><span class="icon">📅</span><span class="val">${formatDateShort(item.checkin_date)} → ${formatDateShort(item.checkout_date)}</span></div>
+        ${!isEmail ? `<div class="detail"><span class="icon">🌍</span><span class="val">${escHtml(item.nationality || "-")}</span></div>` :
+          `<div class="detail"><span class="icon">📨</span><span class="val">${escHtml((item.building_email || "-").split("@")[0])}</span></div>`}
       </div>
       ${alertHtml}
     </div>`;
@@ -724,6 +1027,35 @@ function escHtml(s) {
   const d = document.createElement("div");
   d.textContent = s;
   return d.innerHTML;
+}
+
+function attachCardActions() {
+  // Actions are inline in HTML via onclick
+}
+
+async function cardActionDone(id, type) {
+  try {
+    const table = type === "email" ? "email_log" : "sakani_queue";
+    const newStatus = type === "email" ? "sent" : "submitted";
+    const { error } = await sb.from(table).update({ status: newStatus }).eq("id", id);
+    if (error) throw error;
+    showToast(`✅ Marked as ${newStatus}`);
+    await loadAll();
+  } catch (e) {
+    showToast("❌ Error: " + e.message);
+  }
+}
+
+async function cardActionRetry(id, type) {
+  try {
+    const table = type === "email" ? "email_log" : "sakani_queue";
+    const { error } = await sb.from(table).update({ status: "pending" }).eq("id", id);
+    if (error) throw error;
+    showToast("↻ Retrying...");
+    await loadAll();
+  } catch (e) {
+    showToast("❌ Error: " + e.message);
+  }
 }
 
 // --- TABS ---
@@ -771,7 +1103,6 @@ async function triggerEmails() {
   btn.innerHTML = '<span class="spinner-small"></span> En cours...';
   try {
     const today = todayDubai();
-    // Reset waiting/failed entries to pending so Apps Script picks them up
     const RETRYABLE = ["waiting_dtcm", "waiting_passport", "draft_created", "no_contact"];
     const { data, error } = await sb
       .from("email_log")
@@ -797,8 +1128,7 @@ async function triggerSakani() {
   btn.innerHTML = '<span class="spinner-small"></span> En cours...';
   try {
     const today = todayDubai();
-    const tomorrow = tomorrowDubai();
-    // Reset failed/pending sakani entries
+    const tomorrow = addDaysDubai(1);
     const { data, error } = await sb
       .from("sakani_queue")
       .update({ status: "pending" })
