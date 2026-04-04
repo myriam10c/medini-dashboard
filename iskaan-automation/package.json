@@ -1,0 +1,11 @@
+{
+  "name": "iskaan-automation",
+  "version": "1.0.0",
+  "description": "Automated Iskaan Short Stay registration via Playwright",
+  "scripts": {
+    "register": "node iskaan-register.js"
+  },
+  "dependencies": {
+    "playwright": "^1.44.0"
+  }
+}

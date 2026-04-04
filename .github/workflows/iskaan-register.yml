@@ -1,0 +1,104 @@
+name: Iskaan Short Stay Registration
+
+on:
+  workflow_dispatch:
+    inputs:
+      queue_id:
+        description: 'sakani_queue row ID'
+        required: true
+      portal_url:
+        description: 'Iskaan portal base URL'
+        required: true
+      portal_login:
+        description: 'Email used for Iskaan login/OTP'
+        required: true
+      apartment_no:
+        description: 'Unit number'
+        required: true
+      guest_first_name:
+        description: 'Guest first name'
+        required: true
+      guest_last_name:
+        description: 'Guest last name'
+        required: false
+        default: ''
+      checkin_date:
+        description: 'Check-in date (YYYY-MM-DD)'
+        required: true
+      checkout_date:
+        description: 'Check-out date (YYYY-MM-DD)'
+        required: true
+      total_guests:
+        description: 'Number of guests'
+        required: false
+        default: '1'
+      guest_phone:
+        description: 'Guest phone number'
+        required: false
+        default: ''
+      guest_nationality:
+        description: 'Guest nationality'
+        required: false
+        default: ''
+      passport_path:
+        description: 'Supabase storage path for guest passport'
+        required: false
+        default: ''
+      dtcm_file_url:
+        description: 'DTCM permit storage path or URL'
+        required: false
+        default: ''
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: iskaan-automation
+        run: npm install
+
+      - name: Install Playwright browsers
+        working-directory: iskaan-automation
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Iskaan registration
+        working-directory: iskaan-automation
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          OTP_APPS_SCRIPT_URL: ${{ secrets.OTP_APPS_SCRIPT_URL }}
+          GREEN_API_INSTANCE: ${{ secrets.GREEN_API_INSTANCE }}
+          GREEN_API_TOKEN: ${{ secrets.GREEN_API_TOKEN }}
+          WHATSAPP_GROUP_ID: ${{ secrets.WHATSAPP_GROUP_ID }}
+          QUEUE_ID: ${{ inputs.queue_id }}
+          PORTAL_URL: ${{ inputs.portal_url }}
+          PORTAL_LOGIN: ${{ inputs.portal_login }}
+          APARTMENT_NO: ${{ inputs.apartment_no }}
+          GUEST_FIRST_NAME: ${{ inputs.guest_first_name }}
+          GUEST_LAST_NAME: ${{ inputs.guest_last_name }}
+          CHECKIN_DATE: ${{ inputs.checkin_date }}
+          CHECKOUT_DATE: ${{ inputs.checkout_date }}
+          TOTAL_GUESTS: ${{ inputs.total_guests }}
+          GUEST_PHONE: ${{ inputs.guest_phone }}
+          GUEST_NATIONALITY: ${{ inputs.guest_nationality }}
+          PASSPORT_PATH: ${{ inputs.passport_path }}
+          DTCM_FILE_URL: ${{ inputs.dtcm_file_url }}
+        run: node iskaan-register.js
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-screenshots
+          path: iskaan-automation/downloads/*.png
+          retention-days: 7
