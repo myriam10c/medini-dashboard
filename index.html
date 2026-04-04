@@ -180,7 +180,8 @@ body {
 }
 
 /* --- BUILDING FILTER --- */
-.building-filter {
+/* building-filter removed */
+.building-filter-UNUSED {
   padding: 8px 16px;
   border-bottom: 1px solid var(--border);
 }
@@ -329,27 +330,27 @@ body {
 }
 
 .card-actions {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   display: flex;
-  gap: 4px;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 .card-action-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  height: 30px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--card-hover);
   color: var(--text-dim);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  padding: 0;
+  padding: 0 12px;
   font-family: inherit;
+  gap: 4px;
 }
 .card-action-btn:hover {
   background: var(--accent);
@@ -734,11 +735,6 @@ body {
   <div class="filter-chip" data-filter="failed">Errors</div>
 </div>
 
-<div class="building-filter">
-  <div class="building-filter-label">Buildings</div>
-  <div class="building-chips" id="buildingChips"></div>
-</div>
-
 <div class="action-bar">
   <button class="action-btn email-trigger" onclick="triggerEmails()" id="btnEmails">📧 Relancer Emails</button>
   <button class="action-btn sakani-trigger" onclick="triggerSakani()" id="btnSakani">🏛️ Relancer Portail</button>
@@ -877,29 +873,9 @@ async function loadAll() {
     plus3: { email: plus3EmailData, sakani: plus3SakaniData }
   };
 
-  updateBuildingFilter();
   updateStats();
   renderAll();
   document.getElementById("lastUpdate").textContent = `Updated at ${dubaiTimeNow()} (Dubai)`;
-}
-
-function updateBuildingFilter() {
-  const buildings = new Set();
-  [...emailData, ...sakaniData, ...plus2EmailData, ...plus2SakaniData, ...plus3EmailData, ...plus3SakaniData].forEach(item => {
-    if (item.building) buildings.add(item.building);
-  });
-  const sorted = Array.from(buildings).sort();
-  const chipsHtml = '<div class="building-chip active" data-building="all">All</div>' +
-    sorted.map(b => `<div class="building-chip" data-building="${escHtml(b)}">${escHtml(b)}</div>`).join("");
-  document.getElementById("buildingChips").innerHTML = chipsHtml;
-  document.querySelectorAll(".building-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      document.querySelectorAll(".building-chip").forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      selectedBuilding = chip.dataset.building;
-      renderAll();
-    });
-  });
 }
 
 function updateStats() {
@@ -1044,10 +1020,6 @@ function getFilteredItems(dayData) {
 
   items = mergeByReservation(items);
 
-  if (selectedBuilding !== "all") {
-    items = items.filter(e => e.building === selectedBuilding);
-  }
-
   if (activeFilter !== "all") {
     const allowed = activeFilter.split(",");
     items = items.filter(e => allowed.includes(e.status));
@@ -1103,6 +1075,8 @@ function renderCard(item, isTomorrow) {
   const countdownClass = item.status === "sent" || item.status === "submitted" ? "completed" :
     (getCountdownText(item.checkin_date).includes("Overdue") ? "overdue" : "");
 
+  const isDone = item.status === "sent" || item.status === "submitted";
+
   return `
     <div class="card${isTomorrow ? " tomorrow-card" : ""}" data-id="${item.id}" data-type="${item._type}">
       <div class="card-header">
@@ -1115,11 +1089,6 @@ function renderCard(item, isTomorrow) {
           <div class="status-badge ${statusClass(item.status)}">${icon} ${label}</div>
         </div>
       </div>
-      <div class="card-actions">
-        ${!isEmail ? `<button class="card-action-btn portal-btn" title="Open portal" onclick="openPortalHelper('${item.reservation_id}','${item.apartment_no}','${item.id}')">🏛️ Portal</button>` : ""}
-        <button class="card-action-btn" title="Mark done" onclick="cardActionDone('${item.id}','${item._type}')">✓</button>
-        <button class="card-action-btn" title="Retry" onclick="cardActionRetry('${item.id}','${item._type}')">↻</button>
-      </div>
       <div class="card-details">
         <div class="detail"><span class="icon">🏢</span><span class="val">${escHtml(item.building || "-")}</span></div>
         <div class="detail"><span class="icon">🚪</span><span class="val">Apt ${escHtml(item.apartment_no || "-")}</span></div>
@@ -1128,6 +1097,11 @@ function renderCard(item, isTomorrow) {
           `<div class="detail"><span class="icon">📨</span><span class="val">${escHtml((item.building_email || "-").split("@")[0])}</span></div>`}
       </div>
       ${alertHtml}
+      ${!isDone ? `<div class="card-actions">
+        ${!isEmail ? `<button class="card-action-btn portal-btn" onclick="openPortalHelper('${item.reservation_id}','${item.apartment_no}','${item.id}')">🏛️ Portal</button>` : ""}
+        <button class="card-action-btn" onclick="cardActionDone('${item.id}','${item._type}')">✓ Done</button>
+        <button class="card-action-btn" onclick="cardActionRetry('${item.id}','${item._type}')">↻ Retry</button>
+      </div>` : ""}
     </div>`;
 }
 
