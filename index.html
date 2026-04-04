@@ -461,7 +461,7 @@ const STATUS_LABELS = {
   draft_created: "Draft", processing: "Processing", failed: "Failed",
   no_contact: "No contact", waiting_dtcm: "Missing DTCM", waiting_passport: "Missing passport",
   portal_manual: "Manual portal", whatsapp_manual: "Manual WhatsApp",
-  superseded: "Superseded", webhook_noise: "Noise"
+  superseded: "Superseded", webhook_noise: "Noise", cancelled: "Cancelled"
 };
 
 function statusClass(s) {
@@ -481,7 +481,7 @@ async function loadAll() {
     sb.from("sakani_queue").select("*").eq("checkin_date", tomorrow).order("created_at", { ascending: true }),
   ]);
 
-  const HIDDEN = ["superseded", "webhook_noise", "error"];
+  const HIDDEN = ["superseded", "webhook_noise", "error", "cancelled"];
   emailData = (emailRes.data || []).filter(e => !HIDDEN.includes(e.status));
   sakaniData = sakaniRes.data || [];
   tomorrowEmailData = (tmrwEmailRes.data || []).filter(e => !HIDDEN.includes(e.status));
