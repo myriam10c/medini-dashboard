@@ -251,12 +251,19 @@ async function run() {
       if (await mobileInputs.nth(i).count() > 0) await mobileInputs.nth(i).fill('501234567');
     }
 
-    // Step 9 â Company documents
+    // Step 9 â Company documents (safe: check each slot exists before uploading)
     console.log('[9] Upload company docs');
     const fileInputs = page.locator('input[type="file"]');
-    if (dtcm)         { await fileInputs.nth(guests).setInputFiles(dtcm);         console.log('  â DTCM'); }
-    if (tradeLicense)  { await fileInputs.nth(guests + 1).setInputFiles(tradeLicense); console.log('  â Trade License'); }
-    if (eid)           { await fileInputs.nth(guests + 2).setInputFiles(eid);       console.log('  â EID'); }
+    const totalFileInputs = await fileInputs.count();
+    console.log(`  Found ${totalFileInputs} file inputs on page`);
+    // Upload into available slots after guest passport(s)
+    let slot = guests; // first company doc slot = after guest passports
+    if (dtcm && slot < totalFileInputs)        { await fileInputs.nth(slot).setInputFiles(dtcm);         console.log(`  â DTCM â slot ${slot}`); slot++; }
+    else if (dtcm)                              { console.log(`  â  DTCM: no slot ${slot} (only ${totalFileInputs} inputs)`); }
+    if (tradeLicense && slot < totalFileInputs) { await fileInputs.nth(slot).setInputFiles(tradeLicense); console.log(`  â Trade License â slot ${slot}`); slot++; }
+    else if (tradeLicense)                      { console.log(`  â  Trade License: no slot ${slot}`); }
+    if (eid && slot < totalFileInputs)          { await fileInputs.nth(slot).setInputFiles(eid);          console.log(`  â EID â slot ${slot}`); slot++; }
+    else if (eid)                               { console.log(`  â  EID: no slot ${slot}`); }
     await page.waitForTimeout(500);
 
     // Step 10 â Terms
