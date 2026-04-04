@@ -547,6 +547,36 @@ function renderAll() {
   container.innerHTML = html;
 }
 
+function mergeByReservation(items) {
+  // When both email_log and sakani_queue exist for the same reservation,
+  // keep only the most relevant card (portal done = no email needed)
+  const grouped = {};
+  items.forEach(item => {
+    const key = item.reservation_id;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(item);
+  });
+  const merged = [];
+  Object.values(grouped).forEach(group => {
+    if (group.length === 1) { merged.push(group[0]); return; }
+    const sakani = group.find(i => i._type === "sakani");
+    const email = group.find(i => i._type === "email");
+    if (sakani && email) {
+      // Portal submitted → no email needed, show sakani only
+      if (sakani.status === "submitted") { merged.push(sakani); return; }
+      // Email sent → show email only
+      if (email.status === "sent") { merged.push(email); return; }
+      // Portal manual / whatsapp manual → done via other channel, show sakani if pending
+      if (["portal_manual", "whatsapp_manual"].includes(email.status)) { merged.push(sakani); return; }
+      // Otherwise show both (different issues)
+      merged.push(...group);
+    } else {
+      merged.push(...group);
+    }
+  });
+  return merged;
+}
+
 function getTodayItems() {
   let items = [];
   if (activeTab === "all" || activeTab === "email") {
@@ -555,6 +585,8 @@ function getTodayItems() {
   if (activeTab === "all" || activeTab === "sakani") {
     items.push(...sakaniData.map(e => ({ ...e, _type: "sakani" })));
   }
+  // Merge duplicates only in "all" tab
+  if (activeTab === "all") items = mergeByReservation(items);
   if (activeFilter !== "all") {
     const allowed = activeFilter.split(",");
     items = items.filter(e => allowed.includes(e.status));
@@ -570,6 +602,7 @@ function getTomorrowItems() {
   if (activeTab === "all" || activeTab === "sakani") {
     items.push(...tomorrowSakaniData.map(e => ({ ...e, _type: "sakani" })));
   }
+  if (activeTab === "all") items = mergeByReservation(items);
   return items;
 }
 
