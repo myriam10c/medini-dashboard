@@ -1096,23 +1096,23 @@ function showToast(msg, duration = 3000) {
   setTimeout(() => t.classList.remove("show"), duration);
 }
 
-// --- TRIGGER: EMAILS ---
+// --- TRIGGER VIA EDGE FUNCTION ---
+const TRIGGER_URL = SUPABASE_URL + "/functions/v1/trigger-process";
+
 async function triggerEmails() {
   const btn = document.getElementById("btnEmails");
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-small"></span> En cours...';
   try {
-    const today = todayDubai();
-    const RETRYABLE = ["waiting_dtcm", "waiting_passport", "draft_created", "no_contact"];
-    const { data, error } = await sb
-      .from("email_log")
-      .update({ status: "pending" })
-      .eq("checkin_date", today)
-      .in("status", RETRYABLE)
-      .select("id");
-    if (error) throw error;
-    const count = data ? data.length : 0;
-    showToast(`✅ ${count} email(s) relancé(s)`);
+    const res = await fetch(TRIGGER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON },
+      body: JSON.stringify({ action: "emails" }),
+    });
+    const result = await res.json();
+    if (result.status === "error") throw new Error(result.message);
+    const count = result.emails?.count || 0;
+    showToast(`✅ ${count} email(s) relancé(s) + WhatsApp envoyé`);
     await loadAll();
   } catch (e) {
     showToast("❌ Erreur: " + e.message);
@@ -1121,23 +1121,20 @@ async function triggerEmails() {
   btn.innerHTML = "📧 Relancer Emails";
 }
 
-// --- TRIGGER: SAKANI PORTAIL ---
 async function triggerSakani() {
   const btn = document.getElementById("btnSakani");
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-small"></span> En cours...';
   try {
-    const today = todayDubai();
-    const tomorrow = addDaysDubai(1);
-    const { data, error } = await sb
-      .from("sakani_queue")
-      .update({ status: "pending" })
-      .in("checkin_date", [today, tomorrow])
-      .in("status", ["failed", "pending"])
-      .select("id");
-    if (error) throw error;
-    const count = data ? data.length : 0;
-    showToast(`✅ ${count} enregistrement(s) portail relancé(s)`);
+    const res = await fetch(TRIGGER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON },
+      body: JSON.stringify({ action: "sakani" }),
+    });
+    const result = await res.json();
+    if (result.status === "error") throw new Error(result.message);
+    const count = result.sakani?.count || 0;
+    showToast(`✅ ${count} enregistrement(s) portail relancé(s) + WhatsApp envoyé`);
     await loadAll();
   } catch (e) {
     showToast("❌ Erreur: " + e.message);
