@@ -1,31 +1,31 @@
 /**
- * Iskaan Short Stay Registration — Playwright Automation
+ * Iskaan Short Stay Registration â Playwright Automation
  * Triggered by GitHub Actions, fills and submits the Iskaan portal form.
  *
  * Environment variables (from GitHub Secrets):
  *   SUPABASE_URL, SUPABASE_SERVICE_KEY
- *   OTP_APPS_SCRIPT_URL  — Google Apps Script web app for reading OTP emails
+ *   OTP_APPS_SCRIPT_URL  â Google Apps Script web app for reading OTP emails
  *   GREEN_API_INSTANCE, GREEN_API_TOKEN, WHATSAPP_GROUP_ID
  *
  * Arguments (from workflow_dispatch inputs, passed as env):
- *   QUEUE_ID           — sakani_queue row ID
- *   PORTAL_URL         — e.g. https://hoam.iskaan.com/marwaheights
- *   PORTAL_LOGIN       — e.g. admin@medini-homes.com
- *   APARTMENT_NO       — e.g. 508
+ *   QUEUE_ID           â sakani_queue row ID
+ *   PORTAL_URL         â e.g. https://hoam.iskaan.com/marwaheights
+ *   PORTAL_LOGIN       â e.g. admin@medini-homes.com
+ *   APARTMENT_NO       â e.g. 508
  *   GUEST_FIRST_NAME, GUEST_LAST_NAME
- *   CHECKIN_DATE, CHECKOUT_DATE   — YYYY-MM-DD
- *   TOTAL_GUESTS       — integer
- *   GUEST_PHONE        — guest mobile (optional)
- *   GUEST_NATIONALITY  — ISO country (optional)
- *   PASSPORT_PATH      — Supabase storage path for guest passport
- *   DTCM_FILE_URL      — URL or storage path for DTCM permit
+ *   CHECKIN_DATE, CHECKOUT_DATE   â YYYY-MM-DD
+ *   TOTAL_GUESTS       â integer
+ *   GUEST_PHONE        â guest mobile (optional)
+ *   GUEST_NATIONALITY  â ISO country (optional)
+ *   PASSPORT_PATH      â Supabase storage path for guest passport
+ *   DTCM_FILE_URL      â URL or storage path for DTCM permit
  */
 
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-// ─── Config from env ───
+// âââ Config from env âââ
 const {
   SUPABASE_URL, SUPABASE_SERVICE_KEY,
   OTP_APPS_SCRIPT_URL,
@@ -41,7 +41,7 @@ const {
 const FORM_URL = PORTAL_URL.replace(/\/$/, '') + '/eservices/short-stay';
 const DOWNLOADS = path.join(__dirname, 'downloads');
 
-// ─── Helpers ───
+// âââ Helpers âââ
 
 async function supabaseUpdate(status, errorMessage = null) {
   const body = { status, updated_at: new Date().toISOString() };
@@ -82,7 +82,7 @@ async function downloadFromSupabase(storagePath, filename) {
   const buffer = Buffer.from(await res.arrayBuffer());
   const dest = path.join(DOWNLOADS, filename);
   fs.writeFileSync(dest, buffer);
-  console.log(`Downloaded ${storagePath} → ${dest} (${buffer.length} bytes)`);
+  console.log(`Downloaded ${storagePath} â ${dest} (${buffer.length} bytes)`);
   return dest;
 }
 
@@ -128,7 +128,7 @@ function formatDateForCalendar(isoDate) {
   return `${parseInt(m)}/${parseInt(d)}/${y}`;
 }
 
-// ─── Main Automation ───
+// âââ Main Automation âââ
 
 async function run() {
   console.log(`\n=== Iskaan Registration ===`);
@@ -136,7 +136,7 @@ async function run() {
   console.log(`Portal: ${FORM_URL}`);
   console.log(`Unit: ${APARTMENT_NO}`);
   console.log(`Guest: ${GUEST_FIRST_NAME} ${GUEST_LAST_NAME}`);
-  console.log(`Dates: ${CHECKIN_DATE} → ${CHECKOUT_DATE}`);
+  console.log(`Dates: ${CHECKIN_DATE} â ${CHECKOUT_DATE}`);
   console.log(`Guests: ${TOTAL_GUESTS}\n`);
 
   fs.mkdirSync(DOWNLOADS, { recursive: true });
@@ -155,7 +155,7 @@ async function run() {
     ? await downloadFromSupabase(PASSPORT_PATH, 'passport.pdf')
     : null;
 
-  // DTCM — try Supabase first, could also be a direct URL
+  // DTCM â try Supabase first, could also be a direct URL
   let dtcmPath = null;
   if (DTCM_FILE_URL) {
     dtcmPath = await downloadFromSupabase(DTCM_FILE_URL, 'dtcm_permit.pdf');
@@ -170,18 +170,18 @@ async function run() {
   const page = await context.newPage();
 
   try {
-    // ── Step 1: Navigate to form ──
+    // ââ Step 1: Navigate to form ââ
     console.log('Step 1: Navigating to form...');
     await page.goto(FORM_URL, { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForSelector('div.option', { timeout: 10000 });
 
-    // ── Step 2: Select "Company" ──
+    // ââ Step 2: Select "Company" ââ
     console.log('Step 2: Selecting Company...');
     const companyOption = await page.locator('div.option', { hasText: 'Company' });
     await companyOption.click();
     await page.waitForTimeout(500);
 
-    // ── Step 3: Select Unit ──
+    // ââ Step 3: Select Unit ââ
     console.log(`Step 3: Selecting unit ${APARTMENT_NO}...`);
     const unitSelect = page.locator('nz-select').first();
     await unitSelect.click();
@@ -189,7 +189,7 @@ async function run() {
     await page.locator(`nz-option-item`, { hasText: APARTMENT_NO }).click();
     await page.waitForTimeout(500);
 
-    // ── Step 4: Enter email ──
+    // ââ Step 4: Enter email ââ
     console.log(`Step 4: Entering email ${PORTAL_LOGIN}...`);
     const emailInput = page.locator('input[type="text"]').first();
     // Find the email input near the "Email" label
@@ -199,28 +199,63 @@ async function run() {
 
     // ── Step 5: Click Verify Email & get OTP ──
     console.log('Step 5: Verifying email (OTP)...');
-    await page.locator('button', { hasText: 'Verify Email' }).click();
+    // Click the search/verify button next to email (it's an nz-input-search button)
+    const verifyEmailBtn = page.locator('nz-input-group button, button:has-text("Verify Email")').first();
+    await verifyEmailBtn.click();
     await page.waitForTimeout(2000);
 
     const otp = await fetchOTP(PORTAL_LOGIN);
 
-    // Enter OTP in the verification field
-    const otpInput = page.locator('input[placeholder*="OTP"], input[placeholder*="code"], input[placeholder*="Code"]');
-    if (await otpInput.count() > 0) {
-      await otpInput.fill(otp);
+    // A modal dialog opens for OTP entry — target elements INSIDE the modal
+    const modal = page.locator('nz-modal-container, .ant-modal-wrap').first();
+    await modal.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {
+      console.log('No modal detected, trying page-level OTP input...');
+    });
+
+    // Enter OTP — try modal first, then page level
+    const modalInput = modal.locator('input');
+    const pageOtpInput = page.locator('input[placeholder*="OTP"], input[placeholder*="code"], input[placeholder*="Code"]');
+
+    if (await modalInput.count() > 0) {
+      console.log('Entering OTP in modal dialog...');
+      await modalInput.first().fill(otp);
+    } else if (await pageOtpInput.count() > 0) {
+      console.log('Entering OTP in page-level input...');
+      await pageOtpInput.first().fill(otp);
     } else {
-      // Try the nz-input-group after Verify button
+      // Fallback: try OTP form item
       const otpField = page.locator('nz-form-item', { hasText: 'OTP' }).locator('input');
       await otpField.fill(otp);
     }
+    await page.waitForTimeout(500);
 
-    // Click verify/confirm OTP button
-    const verifyBtn = page.locator('button', { hasText: /verify|confirm|submit/i }).first();
-    await verifyBtn.click();
-    await page.waitForTimeout(2000);
+    // Click verify/confirm button INSIDE the modal (or page-level)
+    const modalVerifyBtn = modal.locator('button');
+    const pageVerifyBtn = page.locator('button', { hasText: /verify|confirm|submit/i });
 
-    // ── Step 6: Set dates ──
-    console.log(`Step 6: Setting dates ${CHECKIN_DATE} → ${CHECKOUT_DATE}...`);
+    if (await modalVerifyBtn.count() > 0) {
+      console.log('Clicking verify button inside modal...');
+      // Click the primary/confirm button in the modal
+      const primaryBtn = modal.locator('button.ant-btn-primary, button:has-text("OK"), button:has-text("Verify"), button:has-text("Confirm")').first();
+      if (await primaryBtn.count() > 0) {
+        await primaryBtn.click();
+      } else {
+        await modalVerifyBtn.last().click();
+      }
+    } else {
+      await pageVerifyBtn.first().click();
+    }
+    await page.waitForTimeout(3000);
+
+    // Wait for modal to close
+    await modal.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {
+      console.log('Modal still visible after verify — might need manual check');
+    });
+    console.log('Step 5: OTP verified successfully');
+
+
+    // ââ Step 6: Set dates ââ
+    console.log(`Step 6: Setting dates ${CHECKIN_DATE} â ${CHECKOUT_DATE}...`);
 
     // Start date
     const startDatePicker = page.locator('nz-date-picker').first();
@@ -238,14 +273,14 @@ async function run() {
     await selectCalendarDate(page, CHECKOUT_DATE);
     await page.waitForTimeout(500);
 
-    // ── Step 7: Number of guests ──
+    // ââ Step 7: Number of guests ââ
     const guestCount = parseInt(TOTAL_GUESTS) || 1;
     console.log(`Step 7: Setting ${guestCount} guests...`);
     const guestInput = page.locator('input[placeholder="Number of Guests"]');
     await guestInput.fill(String(guestCount));
     await page.waitForTimeout(1000); // Wait for guest rows to appear
 
-    // ── Step 8: Fill guest details ──
+    // ââ Step 8: Fill guest details ââ
     console.log('Step 8: Filling guest details...');
     const guestName = `${GUEST_FIRST_NAME} ${GUEST_LAST_NAME}`.trim();
 
@@ -278,7 +313,7 @@ async function run() {
       }
     }
 
-    // ── Step 9: Upload company documents ──
+    // ââ Step 9: Upload company documents ââ
     console.log('Step 9: Uploading company documents...');
     const fileInputs = page.locator('input[type="file"]');
     const fileInputCount = await fileInputs.count();
@@ -305,13 +340,13 @@ async function run() {
       await page.waitForTimeout(500);
     }
 
-    // ── Step 10: Check Terms & Conditions ──
+    // ââ Step 10: Check Terms & Conditions ââ
     console.log('Step 10: Accepting Terms...');
     const termsCheckbox = page.locator('label.ant-checkbox-wrapper, input[type="checkbox"]').first();
     await termsCheckbox.click();
     await page.waitForTimeout(300);
 
-    // ── Step 11: Submit ──
+    // ââ Step 11: Submit ââ
     console.log('Step 11: SUBMITTING...');
     await page.locator('button', { hasText: 'Submit' }).click();
     await page.waitForTimeout(5000);
@@ -321,23 +356,23 @@ async function run() {
     const success = pageText.includes('success') || pageText.includes('submitted') || pageText.includes('Thank');
 
     if (success) {
-      console.log('✅ Form submitted successfully!');
+      console.log('â Form submitted successfully!');
       await supabaseUpdate('submitted');
       await sendWhatsApp(
-        `✅ Iskaan enregistré\n📍 ${APARTMENT_NO} — ${PORTAL_URL.split('/').pop()}\n👤 ${guestName}\n📅 ${CHECKIN_DATE} → ${CHECKOUT_DATE}`
+        `â Iskaan enregistrÃ©\nð ${APARTMENT_NO} â ${PORTAL_URL.split('/').pop()}\nð¤ ${guestName}\nð ${CHECKIN_DATE} â ${CHECKOUT_DATE}`
       );
     } else {
       // Take screenshot for debugging
       await page.screenshot({ path: path.join(DOWNLOADS, 'result.png') });
-      console.log('⚠️ Form submitted but no clear success message. Check result.png');
-      await supabaseUpdate('submitted', 'No clear success confirmation — needs manual check');
+      console.log('â ï¸ Form submitted but no clear success message. Check result.png');
+      await supabaseUpdate('submitted', 'No clear success confirmation â needs manual check');
       await sendWhatsApp(
-        `⚠️ Iskaan soumis (à vérifier)\n📍 ${APARTMENT_NO} — ${PORTAL_URL.split('/').pop()}\n👤 ${guestName}`
+        `â ï¸ Iskaan soumis (Ã  vÃ©rifier)\nð ${APARTMENT_NO} â ${PORTAL_URL.split('/').pop()}\nð¤ ${guestName}`
       );
     }
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('â Error:', error.message);
 
     // Take error screenshot
     try {
@@ -346,7 +381,7 @@ async function run() {
 
     await supabaseUpdate('error', error.message.substring(0, 500));
     await sendWhatsApp(
-      `❌ Iskaan ERREUR\n📍 ${APARTMENT_NO} — ${PORTAL_URL.split('/').pop()}\n🐛 ${error.message.substring(0, 100)}`
+      `â Iskaan ERREUR\nð ${APARTMENT_NO} â ${PORTAL_URL.split('/').pop()}\nð ${error.message.substring(0, 100)}`
     );
 
     process.exit(1);
@@ -355,7 +390,7 @@ async function run() {
   }
 }
 
-// ─── Calendar Date Selection ───
+// âââ Calendar Date Selection âââ
 // Iskaan uses NG-ZORRO date picker. Dates before today+9 are disabled.
 async function selectCalendarDate(page, isoDate) {
   const targetTitle = formatDateForCalendar(isoDate);
@@ -379,7 +414,7 @@ async function selectCalendarDate(page, isoDate) {
   throw new Error(`Could not find date ${isoDate} in calendar after ${maxNavAttempts} attempts`);
 }
 
-// ─── Run ───
+// âââ Run âââ
 run().catch(e => {
   console.error('Fatal error:', e);
   process.exit(1);
